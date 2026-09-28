@@ -172,6 +172,18 @@ API key are configured. The MVP is single-user and single-writer: several agents
 service, but multiple independent Workbench writer processes against the same repository are not a
 supported deployment topology. Automatic Git pull and merge resolution are outside the MVP.
 
+## Using Workbench with AI coding agents
+
+This repo ships `AGENTS.md` and `CLAUDE.md` — agent guidance (repo layout, commands, domain rules
+like the per-type status machines). Point any coding agent (Claude Code, Codex, Cursor, …) at the
+repository and it picks them up automatically.
+
+For agents *using* a running instance, Workbench exposes:
+
+- **MCP** (Streamable HTTP, `/mcp`) — tools like `workbench_claim_next_task`, `workbench_capture_idea`, `workbench_plan_feature`, `workbench_complete_task`
+- **REST API** (`/api/v1`, OpenAPI at `/docs`) — full CRUD, transitions, search
+- **Web UI** (read-only overview at `/ui/`)
+
 ## Docker
 
 Initialize the mounted repository once, then start the service:
