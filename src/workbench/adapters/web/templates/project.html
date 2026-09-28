@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+  <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/ui/">Workspace</a><span>/</span><span>{{ project.key }}</span></nav>
+  <section class="project-hero">
+    <div class="project-identity">
+      <span class="project-monogram">{{ project.key }}</span>
+      <div><p class="eyebrow">Project</p><h1>{{ project.title }}</h1><p>{{ project.slug }}</p></div>
+    </div>
+    <div class="project-summary">
+      <span class="status-pill status-{{ project.status }}">{{ project.status|status_label }}</span>
+      <span>{{ context.summary.total_items }} active item{% if context.summary.total_items != 1 %}s{% endif %}</span>
+      <code>{{ context.repository_revision[:8] }}</code>
+    </div>
+  </section>
+
+  <section class="project-signals">
+    <article><span>Active</span><strong>{{ context.active_work|length }}</strong></article>
+    <article><span>Blocked</span><strong class="{% if context.blockers %}danger-text{% endif %}">{{ context.blockers|length }}</strong></article>
+    <article><span>Backlog</span><strong>{{ context.backlog|length }}</strong></article>
+    <article><span>Types</span><strong>{{ context.summary.by_type|length }}</strong></article>
+  </section>
+
+  <div class="section-heading board-heading"><div><p class="eyebrow">Current state</p><h2>Work board</h2></div><span class="section-meta">Read-only view</span></div>
+  <section class="board" aria-label="Project work board">
+    {% for column in columns %}
+      <div class="board-column board-column-{{ column.key }}">
+        <header><h3>{{ column.title }}</h3><span>{{ column["items"]|length }}</span></header>
+        <div class="board-stack">
+          {% for item in column["items"] %}
+            <a class="work-card work-card-{{ item.status }}" href="/ui/items/{{ item.key }}">
+              <div class="work-card-meta">
+                <span>{{ item.key }}</span>
+                <span class="work-card-labels">
+                  {% if item.status == "blocked" %}<span class="status-pill status-blocked">Blocked</span>{% endif %}
+                  <span class="type-label type-{{ item.type }}">{{ item.type }}</span>
+                </span>
+              </div>
+              <h4>{{ item.title }}</h4>
+              <footer>
+                {% if item.priority %}<span class="priority priority-{{ item.priority }}">{{ item.priority }}</span>{% else %}<span></span>{% endif %}
+                {% if item.assignee %}<span class="avatar" title="Assigned to {{ item.assignee }}">{{ item.assignee[:2]|upper }}</span>{% endif %}
+              </footer>
+            </a>
+          {% else %}<div class="column-empty">Nothing here</div>{% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </section>
+{% endblock %}

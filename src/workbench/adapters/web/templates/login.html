@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in · Workbench</title><link rel="stylesheet" href="/ui/static/app.css">
+  </head>
+  <body class="login-page">
+    <main class="login-card">
+      <div class="brand login-brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>Workbench</span></div>
+      <p class="eyebrow">Private workspace</p><h1>Enter your API key</h1><p>The same local key protects the REST API, MCP endpoint and this view.</p>
+      {% if error %}<div class="login-error" role="alert">{{ error }}</div>{% endif %}
+      <form action="/ui/login" method="post">
+        <input type="hidden" name="next" value="{{ next }}">
+        <label for="token">API key</label><input id="token" name="token" type="password" required autofocus autocomplete="current-password">
+        <button class="primary-action" type="submit">Open workspace <span>↗</span></button>
+      </form>
+    </main>
+  </body>
+</html>

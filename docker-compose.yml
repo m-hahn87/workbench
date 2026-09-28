@@ -1,0 +1,16 @@
+services:
+  workbench:
+    build: .
+    container_name: workbench
+    ports:
+      - "8500:8500"
+    volumes:
+      - ./repo:/data/repo
+      - ./db:/data/repo/.workbench/state
+    environment:
+      WORKBENCH_COMMIT_MODE: "immediate"
+      WORKBENCH_GIT_PUSH_AFTER_COMMIT: "false"
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: "safe.directory"
+      GIT_CONFIG_VALUE_0: "/data/repo"
+    restart: unless-stopped

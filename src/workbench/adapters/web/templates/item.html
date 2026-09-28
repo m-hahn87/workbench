@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="/ui/">Workspace</a><span>/</span>
+    {% if project %}<a href="/ui/projects/{{ project.slug }}">{{ project.key }}</a><span>/</span>{% endif %}
+    <span>{{ data.key }}</span>
+  </nav>
+  <section class="item-heading">
+    <div>
+      <div class="item-kicker"><span class="type-label type-{{ data.type }}">{{ data.type }}</span><span>{{ data.key }}</span></div>
+      <h1>{{ data.title }}</h1>
+    </div>
+    <span class="status-pill status-{{ data.status }} large">{{ data.status|status_label }}</span>
+  </section>
+  <div class="item-layout">
+    <article class="markdown-body">{{ body_html }}</article>
+    <aside class="metadata-card">
+      <h2>Metadata</h2>
+      <dl>
+        <div><dt>Scope</dt><dd>{{ data.scope|status_label }}</dd></div>
+        {% if project %}<div><dt>Project</dt><dd><a href="/ui/projects/{{ project.slug }}">{{ project.title }}</a></dd></div>{% endif %}
+        {% if data.priority %}<div><dt>Priority</dt><dd><span class="priority priority-{{ data.priority }}">{{ data.priority }}</span></dd></div>{% endif %}
+        {% if data.severity %}<div><dt>Severity</dt><dd>{{ data.severity }}</dd></div>{% endif %}
+        {% if data.assignee %}<div><dt>Assignee</dt><dd>{{ data.assignee }}</dd></div>{% endif %}
+        {% if data.owner %}<div><dt>Owner</dt><dd>{{ data.owner }}</dd></div>{% endif %}
+        {% if data.owners %}<div><dt>Owners</dt><dd>{{ data.owners|join(", ") }}</dd></div>{% endif %}
+        {% if data.estimate %}<div><dt>Estimate</dt><dd>{{ data.estimate }}</dd></div>{% endif %}
+        {% if data.due %}<div><dt>Due</dt><dd>{{ data.due }}</dd></div>{% endif %}
+        {% if data.affected_version %}<div><dt>Affected</dt><dd>{{ data.affected_version }}</dd></div>{% endif %}
+        {% if data.target_release %}<div><dt>Release</dt><dd>{{ data.target_release }}</dd></div>{% endif %}
+        {% if data.score is defined %}<div><dt>Score</dt><dd>{{ data.score }}</dd></div>{% endif %}
+        {% if data.supersedes %}<div><dt>Supersedes</dt><dd><code>{{ data.supersedes }}</code></dd></div>{% endif %}
+        <div><dt>Created</dt><dd>{{ data.created|format_datetime }}</dd></div>
+        <div><dt>Updated</dt><dd>{{ data.updated|format_datetime }}</dd></div>
+        <div><dt>Updated by</dt><dd>{{ data.updated_by }}</dd></div>
+        <div><dt>Item revision</dt><dd><code title="{{ item.item_revision }}">{{ item.item_revision|short_revision }}</code></dd></div>
+      </dl>
+      {% if data.tags %}<div class="tag-list">{% for tag in data.tags %}<span>{{ tag }}</span>{% endfor %}</div>{% endif %}
+    </aside>
+  </div>
+{% endblock %}

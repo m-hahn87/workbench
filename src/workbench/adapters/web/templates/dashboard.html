@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Shared project context</p>
+      <h1>What needs attention?</h1>
+      <p class="hero-copy">One durable workspace for people and agents—open, typed and traceable.</p>
+    </div>
+    <a class="primary-action" href="/ui/search">Explore workspace <span>↗</span></a>
+  </section>
+
+  <section class="metrics-grid" aria-label="Workspace metrics">
+    <article class="metric"><span>Projects</span><strong>{{ metrics.projects }}</strong><small>tracked workspaces</small></article>
+    <article class="metric"><span>Active work</span><strong>{{ metrics.active_items }}</strong><small>ready or moving</small></article>
+    <article class="metric metric-alert"><span>Blockers</span><strong>{{ metrics.blockers }}</strong><small>need intervention</small></article>
+    <article class="metric"><span>Idea inbox</span><strong>{{ metrics.ideas }}</strong><small>workspace ideas</small></article>
+  </section>
+
+  <div class="section-heading">
+    <div><p class="eyebrow">Portfolio</p><h2>Projects</h2></div>
+    <span class="section-meta">{{ projects|length }} total</span>
+  </div>
+  {% if projects %}
+    <section class="project-grid">
+      {% for project in projects %}
+        <a class="project-card" href="/ui/projects/{{ project.slug }}">
+          <div class="project-card-top">
+            <span class="project-key">{{ project.key }}</span>
+            <span class="status-pill status-{{ project.status }}">{{ project.status|status_label }}</span>
+          </div>
+          <h3>{{ project.title }}</h3>
+          <p>{{ project.item_count }} item{% if project.item_count != 1 %}s{% endif %} in the shared context.</p>
+          <div class="project-card-foot">
+            {% if project.blocker_count %}<span class="danger-text">● {{ project.blocker_count }} blocked</span>{% else %}<span class="healthy-text">● No blockers</span>{% endif %}
+            <span class="card-arrow">↗</span>
+          </div>
+        </a>
+      {% endfor %}
+    </section>
+  {% else %}
+    <div class="empty-state"><strong>No projects yet.</strong><p>Create one through CLI, REST or MCP and it will appear here.</p></div>
+  {% endif %}
+
+  <section class="split-section">
+    <div>
+      <div class="section-heading compact"><div><p class="eyebrow">Across projects</p><h2>Recently updated</h2></div></div>
+      <div class="list-panel">
+        {% for item in recent %}
+          <a class="list-row" href="/ui/items/{{ item.key }}">
+            <span class="type-dot type-{{ item.type }}"></span>
+            <span class="list-main"><strong>{{ item.title }}</strong><small>{{ item.key }} · {{ item.updated_at|format_datetime }}</small></span>
+            <span class="status-pill status-{{ item.status }}">{{ item.status|status_label }}</span>
+          </a>
+        {% else %}<p class="panel-empty">No items indexed yet.</p>{% endfor %}
+      </div>
+    </div>
+    <div>
+      <div class="section-heading compact"><div><p class="eyebrow">Unassigned context</p><h2>Idea inbox</h2></div></div>
+      <div class="list-panel">
+        {% for item in workspace_items %}
+          <a class="list-row" href="/ui/items/{{ item.key }}">
+            <span class="type-dot type-idea"></span>
+            <span class="list-main"><strong>{{ item.title }}</strong><small>{{ item.key }}</small></span>
+            <span class="status-pill status-{{ item.status }}">{{ item.status|status_label }}</span>
+          </a>
+        {% else %}<p class="panel-empty">The workspace inbox is clear.</p>{% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

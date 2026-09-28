@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="page-heading"><p class="eyebrow">Full-text index</p><h1>Search Workbench</h1><p>Titles, keys, tags and Markdown bodies.</p></section>
+  <form class="search-hero" action="/ui/search" method="get" role="search">
+    <label class="sr-only" for="search-q">Search query</label>
+    <input id="search-q" name="q" type="search" value="{{ query }}" placeholder="Try “merge mechanic” or an item key" autofocus>
+    <button type="submit">Search <span>↗</span></button>
+  </form>
+  {% if query %}
+    <div class="section-heading compact"><h2>{{ results|length }} result{% if results|length != 1 %}s{% endif %}</h2><span class="section-meta">for “{{ query }}”</span></div>
+    <section class="search-results">
+      {% for item in results %}
+        <a class="search-result" href="/ui/items/{{ item.key }}">
+          <span class="type-dot type-{{ item.type }}"></span>
+          <span class="search-result-main"><span class="search-result-meta">{{ item.key }} · {{ item.type }}</span><strong>{{ item.title }}</strong><small>{{ item.body|striptags|truncate(170) }}</small></span>
+          <span class="status-pill status-{{ item.status }}">{{ item.status|status_label }}</span>
+        </a>
+      {% else %}<div class="empty-state"><strong>No matches.</strong><p>Try a shorter phrase, tag or readable item key.</p></div>{% endfor %}
+    </section>
+  {% endif %}
+{% endblock %}

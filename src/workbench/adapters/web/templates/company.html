@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="hero">
+    <div>
+      <p class="eyebrow">hahn.cloud · Zentrale</p>
+      <h1>Firmen-Dashboard</h1>
+      <p class="hero-copy">Ein Blick: Was wartet auf Review, was ist bereit, was blockiert — und welche PRs offen sind.</p>
+    </div>
+    <a class="primary-action" href="/ui/">Workspace <span>↗</span></a>
+  </section>
+
+  <section class="metrics-grid" aria-label="Firmen-KPIs">
+    <article class="metric"><span>Bugs offen</span><strong>{{ kpis.bugs_open }}</strong><small>reported / triaged</small></article>
+    <article class="metric"><span>In Review</span><strong>{{ kpis.review }}</strong><small>wartet auf CTO-Merge</small></article>
+    <article class="metric"><span>Bereit</span><strong>{{ kpis.ready }}</strong><small>für den Dev-Hut</small></article>
+    <article class="metric"><span>In Arbeit</span><strong>{{ kpis.in_progress }}</strong><small>Agenten am Werk</small></article>
+    <article class="metric metric-alert"><span>Blockiert</span><strong>{{ kpis.blocked }}</strong><small>braucht Entscheidung</small></article>
+    <article class="metric"><span>Ops-Watch</span><strong>{% if kanban.ops_watch and kanban.ops_watch.alarm %}ALARM{% else %}OK{% endif %}</strong><small>{{ kanban.ops_watch.updated if kanban.ops_watch else '—' }}</small></article>
+    <article class="metric"><span>Agent-Budget</span><strong>{{ kanban.costs.runs if kanban.costs else 0 }}/{{ kanban.costs.run_limit if kanban.costs else 60 }}</strong><small>{{ kanban.costs.minutes if kanban.costs else 0 }} von {{ kanban.costs.min_limit if kanban.costs else 1200 }} Min</small></article>
+  </section>
+
+  <div class="section-heading">
+    <div><p class="eyebrow">Pull Requests</p><h2>Offene PRs (alle Repos)</h2></div>
+    <span class="section-meta">{{ pr_synced }}</span>
+  </div>
+  <div class="list-panel">
+    {% if pr_lines %}
+      {% for line in pr_lines %}
+        {% if line.startswith('## ') %}
+          <div class="list-row" style="border-top:1px solid #eee"><strong>{{ line[3:] }}</strong></div>
+        {% else %}
+          <div class="list-row"><span class="type-dot type-feature"></span><span class="list-main"><strong>{{ line[4:] }}</strong></span></div>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <p class="panel-empty">Kein Sync gefunden. wb-pr-sync.sh läuft?</p>
+    {% endif %}
+  </div>
+
+  <div class="section-heading">
+    <div><p class="eyebrow">Agenten-Loops</p><h2>Kanban-Worker</h2></div>
+    <span class="section-meta">{{ kanban.generated if kanban else '' }}</span>
+  </div>
+  <div class="list-panel">
+    {% if kanban and kanban.open %}
+      {% for t in kanban.open %}
+        <div class="list-row">
+          <span class="type-dot type-{{ 'bug' if 'watch' in t.title.lower() else 'task' }}"></span>
+          <span class="list-main"><strong>{{ t.title }}</strong><small>{{ t.id }} · {{ t.assignee }} · {{ t.status }}{% if t.last_run %} · Run {{ t.last_run.run }} {{ t.last_run.status }}{% endif %}</small></span>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="panel-empty">Keine offenen Worker-Tasks — alles abgearbeitet. ✅</p>
+    {% endif %}
+  </div>
+  {% if kanban and kanban.recent_done %}
+  <div class="section-heading">
+    <div><p class="eyebrow">Zuletzt erledigt</p><h2>Worker-Historie</h2></div>
+  </div>
+  <div class="list-panel">
+    {% for t in kanban.recent_done[:5] %}
+      <div class="list-row">
+        <span class="type-dot type-feature"></span>
+        <span class="list-main"><strong>{{ t.title }}</strong><small>{{ t.id }} · {{ t.assignee }}</small></span>
+        <span class="status-pill status-done">done</span>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="section-heading">
+    <div><p class="eyebrow">Queues</p><h2>Was als nächstes?</h2></div>
+  </div>
+  <section class="split-section">
+    <div>
+      <div class="section-heading compact"><div><p class="eyebrow">CTO-Arbeit</p><h2>Review / Merge</h2></div></div>
+      <div class="list-panel">
+        {% for item in queue.review %}
+          <a class="list-row" href="/ui/items/{{ item.key }}">
+            <span class="type-dot type-{{ item.type }}"></span>
+            <span class="list-main"><strong>{{ item.title }}</strong><small>{{ item.key }} · {{ item.updated_at|format_datetime }}</small></span>
+            <span class="status-pill status-{{ item.status }}">{{ item.status|status_label }}</span>
+          </a>
+        {% else %}<p class="panel-empty">Nichts zu reviewen. 🎉</p>{% endfor %}
+      </div>
+      <div class="section-heading compact"><div><p class="eyebrow">Dev-Hut</p><h2>Bereit</h2></div></div>
+      <div class="list-panel">
+        {% for item in queue.ready %}
+          <a class="list-row" href="/ui/items/{{ item.key }}">
+            <span class="type-dot type-task"></span>
+            <span class="list-main"><strong>{{ item.title }}</strong><small>{{ item.key }}</small></span>
+            <span class="status-pill status-{{ item.status }}">{{ item.status|status_label }}</span>
+          </a>
+        {% else %}<p class="panel-empty">Queue leer.</p>{% endfor %}
+      </div>
+    </div>
+    <div>
+      <div class="section-heading compact"><div><p class="eyebrow">Achtung</p><h2>Blockiert</h2></div></div>
+      <div class="list-panel">
+        {% for item in queue.blocked %}
+          <a class="list-row" href="/ui/items/{{ item.key }}">
+            <span class="type-dot type-bug"></span>
+            <span class="list-main"><strong>{{ item.title }}</strong><small>{{ item.key }}</small></span>
+            <span class="status-pill status-blocked">blocked</span>
+          </a>
+        {% else %}<p class="panel-empty">Keine Blocker.</p>{% endfor %}
+      </div>
+      <div class="section-heading compact"><div><p class="eyebrow">Rohmaterial</p><h2>Bugs offen</h2></div></div>
+      <div class="list-panel">
+        {% for item in queue.bugs %}
+          <a class="list-row" href="/ui/items/{{ item.key }}">
+            <span class="type-dot type-bug"></span>
+            <span class="list-main"><strong>{{ item.title }}</strong><small>{{ item.key }}</small></span>
+            <span class="status-pill status-{{ item.status }}">{{ item.status|status_label }}</span>
+          </a>
+        {% else %}<p class="panel-empty">Keine offenen Bugs.</p>{% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

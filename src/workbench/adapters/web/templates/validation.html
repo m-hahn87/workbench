@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="page-heading validation-heading">
+    <div><p class="eyebrow">Repository integrity</p><h1>Validation</h1><p>{{ indexed_items }} valid items are currently indexed.</p></div>
+    {% if errors %}<span class="validation-state invalid">{{ errors|length }} issue{% if errors|length != 1 %}s{% endif %}</span>{% else %}<span class="validation-state valid">All checks passed</span>{% endif %}
+  </section>
+  {% if errors %}
+    <section class="error-list">
+      {% for error in errors %}
+        <article class="validation-error">
+          <div class="error-icon">!</div>
+          <div><span class="error-code">{{ error.error_code }}</span><h2>{{ error.message }}</h2><code>{{ error.file_path }}</code></div>
+        </article>
+      {% endfor %}
+    </section>
+  {% else %}
+    <section class="success-panel"><span>✓</span><div><h2>The repository is consistent.</h2><p>Frontmatter, identities, lifecycles, paths and relations passed validation.</p></div></section>
+  {% endif %}
+{% endblock %}

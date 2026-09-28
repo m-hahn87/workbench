@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>{{ title }} · Workbench</title>
+    <link rel="stylesheet" href="/ui/static/app.css?v=1">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="/ui/" aria-label="Workbench workspace">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>Workbench</span>
+      </a>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="/ui/" {% if current_path == '/ui/' %}aria-current="page"{% endif %}>Workspace</a>
+        <a href="/ui/company" {% if current_path == '/ui/company' %}aria-current="page"{% endif %}>Firma</a>
+        <a href="/ui/search" {% if current_path == '/ui/search' %}aria-current="page"{% endif %}>Search</a>
+        <a href="/ui/validation" {% if current_path == '/ui/validation' %}aria-current="page"{% endif %}>
+          Validation{% if validation_count %}<span class="nav-count">{{ validation_count }}</span>{% endif %}
+        </a>
+      </nav>
+      <form class="header-search" action="/ui/search" method="get" role="search">
+        <label class="sr-only" for="header-q">Search Workbench</label>
+        <input id="header-q" name="q" type="search" placeholder="Search items…" value="{{ query|default('') }}">
+        <button type="submit" aria-label="Search">↗</button>
+      </form>
+      {% if auth_enabled %}
+        <form action="/ui/logout" method="post"><button class="quiet-button" type="submit">Sign out</button></form>
+      {% endif %}
+    </header>
+    <main id="main" class="page-shell">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="site-footer">
+      <span>Markdown is canonical.</span>
+      <span>Git keeps the history.</span>
+    </footer>
+  </body>
+</html>
