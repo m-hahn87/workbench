@@ -71,6 +71,72 @@ def normalize_body(body: str) -> str:
     return "\n".join(line.rstrip() for line in lines).strip() + "\n"
 
 
+_TEMPLATE_PREFIXES = (
+    "\n## Beschreibung\n\n",
+    "## Beschreibung\n\n",
+    "\n## Kontext\n\n",
+    "## Kontext\n\n",
+)
+_TEMPLATE_SUFFIXES = (
+    "\n\n## Akzeptanzkriterien\n\n- [ ] Noch festzulegen\n",
+    "\n\n## Akzeptanzkriterien\n\n- [ ] Noch festzulegen",
+    (
+        "\n\n## Schritte zur Reproduktion\n\n1. Noch festzulegen\n\n"
+        "## Erwartetes Verhalten\n\nNoch festzulegen.\n\n"
+        "## Tatsächliches Verhalten\n\nNoch festzulegen.\n\n"
+        "## Umgebung\n\nNoch festzulegen.\n"
+    ),
+    (
+        "\n\n## Schritte zur Reproduktion\n\n1. Noch festzulegen\n\n"
+        "## Erwartetes Verhalten\n\nNoch festzulegen.\n\n"
+        "## Tatsächliches Verhalten\n\nNoch festzulegen.\n\n"
+        "## Umgebung\n\nNoch festzulegen."
+    ),
+    (
+        "\n\n## Entscheidung\n\nNoch festzulegen.\n\n"
+        "## Alternativen\n\nNoch festzulegen.\n\n"
+        "## Konsequenzen\n\nNoch festzulegen.\n"
+    ),
+    (
+        "\n\n## Entscheidung\n\nNoch festzulegen.\n\n"
+        "## Alternativen\n\nNoch festzulegen.\n\n"
+        "## Konsequenzen\n\nNoch festzulegen."
+    ),
+)
+_SECTION_BOUNDARIES = (
+    "\n\n## Akzeptanzkriterien\n",
+    "\n\n## Schritte zur Reproduktion\n",
+    "\n\n## Entscheidung\n",
+)
+
+
+def extract_description(body: str) -> str:
+    text = body.replace("\r\n", "\n").replace("\r", "\n")
+    if "\n\n## Kommentare\n" in text:
+        text = text.split("\n\n## Kommentare\n", 1)[0]
+    elif text.startswith("## Kommentare\n") or text.startswith("\n## Kommentare\n"):
+        return ""
+
+    for prefix in _TEMPLATE_PREFIXES:
+        if text.startswith(prefix):
+            content = text[len(prefix) :]
+            for suffix in _TEMPLATE_SUFFIXES:
+                if content.endswith(suffix):
+                    return content[: -len(suffix)]
+            for boundary in _SECTION_BOUNDARIES:
+                if boundary in content:
+                    return content.split(boundary, 1)[0]
+            if content.endswith("\n"):
+                content = content[:-1]
+            return content
+
+    if text.startswith("\n"):
+        text = text[1:]
+    if text.endswith("\n"):
+        text = text[:-1]
+    return text
+
+
 class MarkdownStore:
     def parse(self, text: str) -> MarkdownDocument:
         text = text.lstrip("\ufeff")

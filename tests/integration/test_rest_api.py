@@ -235,3 +235,47 @@ def test_mcp_cors_preflight_does_not_require_bearer_token(
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "https://client.example"
+
+
+def test_post_items_stores_and_returns_description_on_get(tmp_path: Path) -> None:
+    root = tmp_path / "data"
+    workbench = Workbench.initialize(root, commit_mode="immediate")
+    workbench.create_project("Merge Quest", key="MQ", actor="matze")
+
+    description_text = (
+        "Mehrzeilige Beschreibung für Agenten-Workflows.\n\n"
+        "### Details\n"
+        "- Punkt 1\n"
+        "- Punkt 2"
+    )
+
+    with TestClient(create_app(root)) as client:
+        for item_type in ("task", "bug", "feature", "idea", "decision"):
+            payload = {
+                "type": item_type,
+                "title": f"{item_type.title()} with description",
+                "description": description_text,
+                "actor": "dispatcher",
+            }
+            if item_type != "idea":
+                payload["project"] = "MQ"
+
+            created = client.post("/api/v1/items", json=payload)
+            assert created.status_code == 201
+            created_json = created.json()
+            key = created_json["data"]["key"]
+
+            assert created_json["description"] == description_text
+            assert created_json["data"]["description"] == description_text
+
+            fetched = client.get(f"/api/v1/items/{key}")
+            assert fetched.status_code == 200
+            fetched_json = fetched.json()
+            assert fetched_json["description"] == description_text
+            assert fetched_json["data"]["description"] == description_text
+
+        project_items = client.get("/api/v1/projects/MQ/items")
+        assert project_items.status_code == 200
+        for entry in project_items.json()["data"]:
+            assert entry["description"] == description_text
+

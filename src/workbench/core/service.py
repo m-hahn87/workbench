@@ -44,6 +44,7 @@ from workbench.repository.locking import RepositoryLock
 from workbench.repository.markdown_store import (
     MarkdownDocument,
     MarkdownStore,
+    extract_description,
     frontmatter_data,
 )
 from workbench.state.idempotency import IdempotencyStore
@@ -107,14 +108,25 @@ class ItemResult:
     item_revision: str
     file_path: str
     repository_revision: str
+    description: str | None = None
     commit_pending: bool = False
     warnings: list[str] = field(default_factory=list)
     request_id: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
+        resolved_description = (
+            self.description
+            if self.description is not None
+            else self.data.get("description")
+            if isinstance(self.data.get("description"), str)
+            else extract_description(self.body)
+        )
+        data = dict(self.data)
+        data.setdefault("description", resolved_description)
         return {
-            "data": self.data,
+            "data": data,
             "body": self.body,
+            "description": resolved_description,
             "item_revision": self.item_revision,
             "file_path": self.file_path,
             "repository_revision": self.repository_revision,
@@ -125,9 +137,21 @@ class ItemResult:
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> ItemResult:
+        body = str(value["body"])
+        data = dict(value["data"])
+        raw_description = value.get("description")
+        if not isinstance(raw_description, str):
+            raw_description = data.get("description")
+        description = (
+            raw_description
+            if isinstance(raw_description, str)
+            else extract_description(body)
+        )
+        data.setdefault("description", description)
         return cls(
-            data=dict(value["data"]),
-            body=str(value["body"]),
+            data=data,
+            body=body,
+            description=description,
             item_revision=str(value["item_revision"]),
             file_path=str(value["file_path"]),
             repository_revision=str(value["repository_revision"]),
@@ -863,9 +887,13 @@ class Workbench:
             raise ItemNotFound(identifier)
         path = self.root / str(row["file_path"])
         item, document = self.store.read_item(path)
+        description = extract_description(document.body)
+        data = item.model_dump(mode="json", exclude_none=True)
+        data["description"] = description
         return ItemResult(
-            data=item.model_dump(mode="json", exclude_none=True),
+            data=data,
             body=document.body,
+            description=description,
             item_revision=self.store.semantic_hash(item, document.body),
             file_path=str(row["file_path"]),
             repository_revision=str(row["repository_revision"]),
@@ -885,7 +913,7 @@ class Workbench:
                 raise ProjectNotFound(project)
             project_slug = str(row["slug"])
         return [
-            dict(row)
+            self._item_row_dict(row)
             for row in self.database.list_items(
                 project=project_slug,
                 item_type=item_type,
@@ -1553,7 +1581,16 @@ class Workbench:
             return result
 
     def search(self, query: str, *, limit: int = 20) -> list[dict[str, Any]]:
-        return [dict(row) for row in self.database.search(query, limit=limit)]
+        return [
+            self._item_row_dict(row)
+            for row in self.database.search(query, limit=limit)
+        ]
+
+    @staticmethod
+    def _item_row_dict(row: Any) -> dict[str, Any]:
+        item = dict(row)
+        item["description"] = extract_description(str(item.get("body", "")))
+        return item
 
     def get_activity(
         self,

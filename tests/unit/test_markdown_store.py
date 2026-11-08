@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from workbench.repository.markdown_store import MarkdownStore
+from workbench.repository.markdown_store import MarkdownStore, extract_description
 
 
 FIRST = """---
@@ -69,3 +69,29 @@ def test_content_hash_ignores_semantic_formatting_differences() -> None:
     second = store.parse(SECOND)
 
     assert store.item_hash(first) == store.item_hash(second)
+
+
+def test_extract_description_returns_exact_description_across_templates_and_comments() -> None:
+    desc = "Exakte Beschreibung.\n\n## Unterabschnitt\n- Detail A"
+    task_body = (
+        f"\n## Beschreibung\n\n{desc}\n\n"
+        "## Akzeptanzkriterien\n\n- [ ] Noch festzulegen\n"
+    )
+    bug_body = (
+        f"\n## Beschreibung\n\n{desc}\n\n"
+        "## Schritte zur Reproduktion\n\n1. Noch festzulegen\n\n"
+        "## Erwartetes Verhalten\n\nNoch festzulegen.\n\n"
+        "## Tatsächliches Verhalten\n\nNoch festzulegen.\n\n"
+        "## Umgebung\n\nNoch festzulegen.\n"
+    )
+    commented_body = (
+        task_body.rstrip()
+        + "\n\n## Kommentare\n\n### agent — 2026-11-08T10:00:00Z\n\nNotiz\n"
+    )
+    raw_patched_body = "\nDirekt via PATCH gesetzter Body\n"
+
+    assert extract_description(task_body) == desc
+    assert extract_description(bug_body) == desc
+    assert extract_description(commented_body) == desc
+    assert extract_description(raw_patched_body) == "Direkt via PATCH gesetzter Body"
+

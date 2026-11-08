@@ -40,7 +40,7 @@ Docker: `docker compose up -d` (serves REST + web UI; data under the mounted `--
 ## Conventions
 
 - **Item types** (`task`, `bug`, `feature`, `idea`, `decision`) each have their **own status machine** — check `src/workbench/domain/transitions.py` before wiring transitions. Most have no way back (e.g. `in-progress → ready` is invalid); when stuck, use the terminal states or create a replacement item.
-- API quirk: comment payloads use the field **`text`** (not `body`); single-item GET returns `{"data": {…}}` wrapped.
+- API quirk: comment payloads use the field **`text`** (not `body`); single-item GET returns `{"data": {…}}` wrapped; `POST /api/v1/items` stores `description` in the canonical Markdown body and `GET /api/v1/items/{KEY}` returns `description` (top-level and in `data.description`) alongside `body`.
 - REST transitions: `POST /api/v1/items/{KEY}/transitions` with `{"status", "actor", "reason"}`.
 - Tests: pytest, `tests/unit` + `tests/integration`. New features need tests — the suite is the merge gate.
 - Style: standard Python (PEP 8), type hints in public APIs, `ruff`-compatible formatting.

@@ -48,6 +48,7 @@ class CreateItemRequest(MutationMetadata):
     title: str = Field(min_length=1)
     project: str | None = None
     description: str | None = None
+    body: str | None = None
     tags: list[str] = Field(default_factory=list)
     fields: dict[str, Any] = Field(default_factory=dict)
 
@@ -68,6 +69,7 @@ class TransitionRequest(ExistingItemMutation):
 class UpdateItemRequest(ExistingItemMutation):
     fields: dict[str, Any] = Field(default_factory=dict)
     body: str | None = None
+    description: str | None = None
 
 
 class TypeChangeRequest(ExistingItemMutation):
@@ -336,12 +338,15 @@ def create_app(root: Path | str) -> FastAPI:
         payload: CreateItemRequest,
         workbench: Workbench = Depends(_workbench),
     ) -> dict[str, object]:
+        description = (
+            payload.description if payload.description is not None else payload.body
+        )
         return workbench.create_item(
             item_type=payload.item_type,
             title=payload.title,
             actor=payload.actor,
             project=payload.project,
-            description=payload.description,
+            description=description,
             tags=payload.tags,
             fields=payload.fields,
             reason=payload.reason,
@@ -361,11 +366,12 @@ def create_app(root: Path | str) -> FastAPI:
         payload: UpdateItemRequest,
         workbench: Workbench = Depends(_workbench),
     ) -> dict[str, object]:
+        body = payload.body if payload.body is not None else payload.description
         return workbench.update_item(
             item_id,
             actor=payload.actor,
             changes=payload.fields,
-            body=payload.body,
+            body=body,
             expected_revision=payload.expected_revision,
             reason=payload.reason,
             request_id=payload.request_id,
