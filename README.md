@@ -100,7 +100,9 @@ curl -X POST http://127.0.0.1:8500/api/v1/workflows/plan-feature \
 
 The OpenAPI document is available at `/openapi.json`, with interactive documentation at `/docs`.
 Mutation responses include the item revision, repository revision, pending-commit state, warnings,
-and request ID. Errors use stable codes and appropriate HTTP statuses.
+and request ID. Creating an item via `POST /api/v1/items` with `description` persists it in the
+canonical Markdown body and returns `description` (both top-level and under `data.description`) on
+`POST` and `GET /api/v1/items/{item_id}`. Errors use stable codes and appropriate HTTP statuses.
 
 ## MCP
 

@@ -25,7 +25,7 @@ uv run workbench doctor --root ./demo-data
 1. All writes go through the service layer — never write item files or DBs directly.
 2. Domain changes (status machines, validation, relations) require tests in `tests/`.
 3. Status machines are one-way mostly — read `transitions.py`, don't guess.
-4. API quirks: comment field is `text`; GET single item wraps in `{"data": …}`.
+4. API quirks: comment field is `text`; GET single item wraps in `{"data": …}`; `POST /api/v1/items` stores `description` and `GET /api/v1/items/{KEY}` returns `description` (top-level and in `data.description`).
 5. Conventional Commits. Run `uv run pytest` before pushing.
 6. `db/` and `repo/` are instance data — gitignored, never commit.
 
