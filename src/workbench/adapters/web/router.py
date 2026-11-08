@@ -229,7 +229,7 @@ def install_web_ui(app: FastAPI) -> None:
 
         pr_lines: list[str] = []
         pr_synced = ""
-        pr_file = Path(os.getenv("WORKBENCH_ROOT", "/data/repo")) / "projects/hahn-cloud/PR-STATUS.md"
+        pr_file = Path(os.getenv("WORKBENCH_ROOT", "/data/repo")) / "panels/PR-STATUS.md"
         if pr_file.exists():
             in_body = False
             for raw in pr_file.read_text(encoding="utf-8").splitlines():
