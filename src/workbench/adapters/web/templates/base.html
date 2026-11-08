@@ -6,6 +6,17 @@
     <meta name="color-scheme" content="light">
     <title>{{ title }} · Workbench</title>
     <link rel="stylesheet" href="/ui/static/app.css?v=1">
+    <meta name="theme-color" content="#F97316">
+    <link rel="manifest" href="/ui/static/manifest.json">
+    <link rel="apple-touch-icon" href="/ui/static/icon-192.png">
+    <link rel="icon" href="/ui/static/icon-192.png" sizes="192x192">
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/ui/static/sw.js", { scope: "/ui/" }).catch(() => {});
+        });
+      }
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
