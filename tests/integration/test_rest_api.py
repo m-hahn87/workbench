@@ -294,3 +294,36 @@ def test_post_items_preserves_explicitly_empty_description(tmp_path: Path) -> No
         fetched = client.get(f"/api/v1/items/{key}")
         assert fetched.status_code == 200
         assert fetched.json()["data"]["description"] == ""
+
+
+def test_illegal_transition_reports_current_status_and_allowed_targets(
+    tmp_path: Path,
+) -> None:
+    Workbench.initialize(tmp_path, commit_mode="immediate")
+
+    with TestClient(create_app(tmp_path)) as client:
+        created = client.post(
+            "/api/v1/items", json={"type": "task", "title": "Backlog task"}
+        )
+        assert created.status_code == 201
+        item_url = f"/api/v1/items/{created.json()['data']['key']}"
+
+        for target in ("done", "fixed"):
+            response = client.post(f"{item_url}/transitions", json={"status": target})
+            assert response.status_code == 409
+            error = response.json()["error"]
+            assert error["code"] == "transition_not_allowed"
+            assert error["current_status"] == "backlog"
+            assert error["allowed_transitions"] == [
+                "archived",
+                "blocked",
+                "cancelled",
+                "in-progress",
+                "ready",
+                "review",
+            ]
+            assert "backlog" in error["message"]
+            assert target in error["message"]
+
+        fetched = client.get(item_url)
+        assert fetched.json()["item_revision"] == created.json()["item_revision"]
