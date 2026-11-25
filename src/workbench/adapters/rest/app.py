@@ -67,6 +67,8 @@ class TransitionRequest(ExistingItemMutation):
 
 
 class UpdateItemRequest(ExistingItemMutation):
+    model_config = ConfigDict(extra="forbid")
+
     fields: dict[str, Any] = Field(default_factory=dict)
     body: str | None = None
     description: str | None = None
@@ -216,7 +218,13 @@ def create_app(root: Path | str) -> FastAPI:
     async def transition_not_allowed(
         _request: Request, exc: TransitionNotAllowed
     ) -> JSONResponse:
-        return _error(422, "transition_not_allowed", str(exc))
+        return _error(
+            409,
+            "transition_not_allowed",
+            str(exc),
+            current_status=exc.current,
+            allowed_transitions=exc.allowed_transitions,
+        )
 
     @app.exception_handler(RepositoryError)
     async def repository_error(_request: Request, exc: RepositoryError) -> JSONResponse:
@@ -629,8 +637,9 @@ def _error(
     code: str,
     message: str,
     details: dict[str, object] | None = None,
+    **fields: object,
 ) -> JSONResponse:
-    error: dict[str, object] = {"code": code, "message": message}
+    error: dict[str, object] = {"code": code, "message": message, **fields}
     if details:
         error["details"] = details
     return JSONResponse(status_code=status_code, content={"error": error})

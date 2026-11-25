@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Set
+from enum import Enum
+from typing import Any
 
 from workbench.domain.models import (
     BugItem,
@@ -17,10 +19,11 @@ from workbench.domain.models import (
 
 
 class TransitionNotAllowed(ValueError):
-    def __init__(self, current: str, target: str) -> None:
+    def __init__(self, current: str, target: str, allowed: Set[Enum]) -> None:
         super().__init__(f"transition from {current!r} to {target!r} is not allowed")
         self.current = current
         self.target = target
+        self.allowed_transitions = sorted(status.value for status in allowed)
 
 
 TASK_TRANSITIONS: Mapping[TaskStatus, Set[TaskStatus]] = {
@@ -167,7 +170,7 @@ DECISION_TRANSITIONS: Mapping[DecisionStatus, Set[DecisionStatus]] = {
 ItemWithLifecycle = TaskItem | BugItem | FeatureItem | IdeaItem | DecisionItem
 
 
-def transitions_for(item: ItemWithLifecycle) -> Mapping[object, Set[object]]:
+def transitions_for(item: ItemWithLifecycle) -> Mapping[Any, Set[Enum]]:
     if isinstance(item, TaskItem):
         return TASK_TRANSITIONS
     if isinstance(item, BugItem):
@@ -183,10 +186,7 @@ def ensure_transition(
     item: ItemWithLifecycle,
     target: str,
 ) -> TaskStatus | BugStatus | FeatureStatus | IdeaStatus | DecisionStatus:
-    status_type = type(item.status)
-    target_status = status_type(target)
     allowed = transitions_for(item)[item.status]
-
-    if target_status not in allowed:
-        raise TransitionNotAllowed(item.status.value, target_status.value)
-    return target_status
+    if target not in allowed:
+        raise TransitionNotAllowed(item.status.value, target, allowed)
+    return type(item.status)(target)

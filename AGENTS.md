@@ -40,8 +40,9 @@ Docker: `docker compose up -d` (serves REST + web UI; data under the mounted `--
 ## Conventions
 
 - **Item types** (`task`, `bug`, `feature`, `idea`, `decision`) each have their **own status machine** — check `src/workbench/domain/transitions.py` before wiring transitions. Most have no way back (e.g. `in-progress → ready` is invalid); when stuck, use the terminal states or create a replacement item.
-- API quirk: comment payloads use the field **`text`** (not `body`); single-item GET returns `{"data": {…}}` wrapped; `POST /api/v1/items` stores `description` in the canonical Markdown body and `GET /api/v1/items/{KEY}` returns `description` (top-level and in `data.description`) alongside `body`.
-- REST transitions: `POST /api/v1/items/{KEY}/transitions` with `{"status", "actor", "reason"}`.
+- REST comments use `text`. Item creation stores `description` in canonical Markdown, including an explicit empty string. Single-item GET returns `description` at the top level and under `data`.
+- Submit transitions to `POST /api/v1/items/{KEY}/transitions` with `status`, `actor`, and optional `reason`. An illegal transition returns HTTP 409 with `error.code`, `error.message`, `error.current_status`, and `error.allowed_transitions`.
+- Use `PATCH /api/v1/items/{KEY}` to apply edits. Put editable metadata such as `title` under `fields` and send `description` or `body` at the top level. Unknown top-level fields return 422. A successful PATCH is visible to the next GET. `commit_pending` indicates that the Git commit is still pending.
 - Tests: pytest, `tests/unit` + `tests/integration`. New features need tests — the suite is the merge gate.
 - Style: standard Python (PEP 8), type hints in public APIs, `ruff`-compatible formatting.
 - Runtime data (`db/`, `repo/` workspace data) is gitignored — **never commit instance data**.
