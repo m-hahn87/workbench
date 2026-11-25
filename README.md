@@ -102,7 +102,18 @@ The OpenAPI document is available at `/openapi.json`, with interactive documenta
 Mutation responses include the item revision, repository revision, pending-commit state, warnings,
 and request ID. Creating an item via `POST /api/v1/items` with `description` persists it in the
 canonical Markdown body and returns `description` (both top-level and under `data.description`) on
-`POST` and `GET /api/v1/items/{item_id}`. Errors use stable codes and appropriate HTTP statuses.
+`POST` and `GET /api/v1/items/{item_id}`. An explicit empty description is preserved.
+
+Apply item edits with `PATCH /api/v1/items/{item_id}`. Send metadata such as a title as
+`{"fields":{"title":"Updated title"}}` and send `description` or `body` at the top level.
+Unknown top-level fields return HTTP 422 before any changes are applied. A successful PATCH
+updates Markdown and the index synchronously, so the next GET sees the applied state. In
+`immediate` mode the Git commit also completes before the response. In `debounce` and `manual`
+modes, `commit_pending: true` indicates that the Git commit is still pending.
+
+An illegal status change via `POST /api/v1/items/{item_id}/transitions` returns HTTP 409.
+The `error` object contains `code: "transition_not_allowed"`, `message`, `current_status`,
+and `allowed_transitions` for the current item type and status.
 
 ## MCP
 

@@ -67,6 +67,8 @@ class TransitionRequest(ExistingItemMutation):
 
 
 class UpdateItemRequest(ExistingItemMutation):
+    model_config = ConfigDict(extra="forbid")
+
     fields: dict[str, Any] = Field(default_factory=dict)
     body: str | None = None
     description: str | None = None

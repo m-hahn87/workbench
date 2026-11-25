@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from workbench.adapters.rest.app import create_app
@@ -327,3 +328,60 @@ def test_illegal_transition_reports_current_status_and_allowed_targets(
 
         fetched = client.get(item_url)
         assert fetched.json()["item_revision"] == created.json()["item_revision"]
+
+
+@pytest.mark.parametrize("commit_mode", ["immediate", "debounce", "manual"])
+def test_patch_item_is_visible_to_immediate_get(
+    tmp_path: Path, commit_mode: str
+) -> None:
+    Workbench.initialize(tmp_path, commit_mode=commit_mode)
+
+    with TestClient(create_app(tmp_path)) as client:
+        created = client.post(
+            "/api/v1/items", json={"type": "task", "title": "Original title"}
+        )
+        assert created.status_code == 201
+        original = created.json()
+        item_url = f"/api/v1/items/{original['data']['key']}"
+        applied = client.patch(
+            item_url,
+            json={
+                "fields": {"title": "Applied title"},
+                "description": "Applied description",
+                "expected_revision": original["item_revision"],
+            },
+        )
+        fetched = client.get(item_url)
+
+        assert applied.status_code == fetched.status_code == 200
+        applied_data = applied.json()
+        fetched_data = fetched.json()
+        for field in ("data", "body", "description", "item_revision"):
+            assert applied_data[field] == fetched_data[field]
+        assert fetched_data["data"]["title"] == "Applied title"
+        assert fetched_data["description"] == "Applied description"
+        assert fetched_data["item_revision"] != original["item_revision"]
+        assert applied_data["commit_pending"] == (commit_mode != "immediate")
+        if commit_mode == "immediate":
+            revision = applied_data["repository_revision"]
+            assert revision == fetched_data["repository_revision"]
+            assert revision != original["repository_revision"]
+
+
+def test_patch_rejects_unknown_fields_before_applying_changes(tmp_path: Path) -> None:
+    Workbench.initialize(tmp_path, commit_mode="immediate")
+
+    with TestClient(create_app(tmp_path)) as client:
+        created = client.post(
+            "/api/v1/items", json={"type": "task", "title": "Original title"}
+        )
+        assert created.status_code == 201
+        original = created.json()
+        item_url = f"/api/v1/items/{original['data']['key']}"
+        rejected = client.patch(
+            item_url,
+            json={"title": "Ignored title", "description": "Would otherwise apply"},
+        )
+        assert rejected.status_code == 422
+        assert rejected.json()["detail"][0]["loc"] == ["body", "title"]
+        assert client.get(item_url).json()["item_revision"] == original["item_revision"]
