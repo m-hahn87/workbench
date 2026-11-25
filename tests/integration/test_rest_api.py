@@ -279,3 +279,18 @@ def test_post_items_stores_and_returns_description_on_get(tmp_path: Path) -> Non
         for entry in project_items.json()["data"]:
             assert entry["description"] == description_text
 
+
+
+def test_post_items_preserves_explicitly_empty_description(tmp_path: Path) -> None:
+    Workbench.initialize(tmp_path, commit_mode="immediate")
+
+    with TestClient(create_app(tmp_path)) as client:
+        created = client.post(
+            "/api/v1/items",
+            json={"type": "idea", "title": "Empty description", "description": ""},
+        )
+        assert created.status_code == 201
+        key = created.json()["data"]["key"]
+        fetched = client.get(f"/api/v1/items/{key}")
+        assert fetched.status_code == 200
+        assert fetched.json()["data"]["description"] == ""

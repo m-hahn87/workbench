@@ -584,16 +584,17 @@ class Workbench:
                 "updated_by": actor,
                 "tags": tags or [],
             }
+            description_text = title if description is None else description
             if parsed_type == ItemType.TASK:
                 item: ItemModel = TaskItem(**common, **supplied_fields)
                 body = (
-                    f"\n## Beschreibung\n\n{description or title}\n\n"
+                    f"\n## Beschreibung\n\n{description_text}\n\n"
                     "## Akzeptanzkriterien\n\n- [ ] Noch festzulegen\n"
                 )
             elif parsed_type == ItemType.BUG:
                 item = BugItem(**common, **supplied_fields)
                 body = (
-                    f"\n## Beschreibung\n\n{description or title}\n\n"
+                    f"\n## Beschreibung\n\n{description_text}\n\n"
                     "## Schritte zur Reproduktion\n\n1. Noch festzulegen\n\n"
                     "## Erwartetes Verhalten\n\nNoch festzulegen.\n\n"
                     "## Tatsächliches Verhalten\n\nNoch festzulegen.\n\n"
@@ -603,17 +604,17 @@ class Workbench:
                 feature_fields = {"owner": actor, **supplied_fields}
                 item = FeatureItem(**common, **feature_fields)
                 body = (
-                    f"\n## Beschreibung\n\n{description or title}\n\n"
+                    f"\n## Beschreibung\n\n{description_text}\n\n"
                     "## Akzeptanzkriterien\n\n- [ ] Noch festzulegen\n"
                 )
             elif parsed_type == ItemType.IDEA:
                 item = IdeaItem(**common, **supplied_fields)
-                body = f"\n## Beschreibung\n\n{description or title}\n"
+                body = f"\n## Beschreibung\n\n{description_text}\n"
             else:
                 decision_fields = {"owners": [actor], **supplied_fields}
                 item = DecisionItem(**common, **decision_fields)
                 body = (
-                    f"\n## Kontext\n\n{description or title}\n\n"
+                    f"\n## Kontext\n\n{description_text}\n\n"
                     "## Entscheidung\n\nNoch festzulegen.\n\n"
                     "## Alternativen\n\nNoch festzulegen.\n\n"
                     "## Konsequenzen\n\nNoch festzulegen.\n"
